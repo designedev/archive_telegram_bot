@@ -1,0 +1,29 @@
+{
+  "name": "archiving_telegram_bot",
+  "version": "1.0.0",
+  "description": "telegram bot for archive web page.",
+  "main": "archive.js",
+  "dependencies": {
+    "archive.is": "^0.0.2",
+    "sqlite3": "^3.1.8",
+    "telegram-bot-api": "^1.2.0",
+    "url-regex": "^4.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node archive.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/designedev/archive_telegram_bot.git"
+  },
+  "keywords": [
+    "none"
+  ],
+  "author": "designedev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/designedev/archive_telegram_bot/issues"
+  },
+  "homepage": "https://github.com/designedev/archive_telegram_bot#readme"
+}

@@ -15,94 +15,81 @@ var api = new telegram({
 createTable();
 
 api.on('message', function(message) {
-	console.log(message);
-/*
-	console.log(message);
-	console.log("======================");
-	console.log(message.text);
-	console.log(urlRegex().test(message.text));
-	console.log("======================");
-*/
+	console.log(message);	
 	var msg = message.text;
-/*	
-	if(msg == 'log') {
-		//readAllData().then(result => console.log(result));
-		//send_msg(message.chat.id, 'aaaaa');
-		readAllData().then(result => send_msg(message.chat.id, result));
-		//send_msg(message.chat.id, realAllData());
+	if(msg == '기록') {
+		history(message);
 	}
-*/
-	if(urlRegex().test(msg)) {
+	else if(urlRegex().test(msg)) {
 		archive.save(msg).then(function(result) {
-		send_msg( 
-			message.chat.id,
-			`${message.from.first_name} ${message.from.last_name} 님이 요청하신 주소에 대한 처리가 완료되었습니다.\n ====>\n ${result.shortUrl} `
-		);
-		insertRows(message.chat.id, message.from.username, msg, result.shortUrl);
-		if(message.from.username != master_user_name) {
-			send_msg(master_user_id, `${message.from.username} 님이 아카이빙을 요청했습니다.\n URL : \n ${result.shortUrl}`);
-		}
-	}, function (error) {
-		send_msg(message.chat.id, "저장 서버에 문제가 있는 것 같습니다. 잠시 뒤에 다시 시도해 주세요." );
-		console.log(error);
-	});
-	}
-/*
-	else {
-		send_msg(message.chat.id, `${msg}\n 는 올바른 주소가 아닙니다.`);
-	}
-*/
-
-/*
-	var msg = message.text;
-	var msgArr = msg.split('!save');
-	if(msgArr[1] == '') {
-		
-	}
-	else {
-		archive.save(msgArr[1]).then(function(result) {
+			//send message to requested user.
 			send_msg(
 				message.chat.id,
 				`${message.from.first_name} ${message.from.last_name} 님이 요청하신 주소에 대한 처리가 완료되었습니다.\n ====>\n ${result.shortUrl} `
 			);
+
+			//insert query date to sqlite3 DB.
+			insert(message.from.id, message.from.username, msg, result.shortUrl);
+
+			//if user request archiving, notify to master.
+			if(message.from.id != master_user_id) {
+				send_msg_to_master(`${message.from.username} 님이 아카이빙을 요청했습니다.\n URL : \n ${result.shortUrl}`);
+			}
+		}, function (error) {
+			send_msg(message.from.id, "요청하신 URL을 저장하는데 문제가 발생했습니다. \n보통 archive.is 의 문제입니다. \n잠시 뒤에 다시 시도해 주세요." );
+			send_msg_to_master(`${message.from.username} 님의 요청에 오류가 발생했습니다.`);
+			console.log(error);
 		});
 	}
-*/
+	else {
+		if(message.from.id == message.chat.id) {
+			var usage = `
+				아카이빙 봇의 사용법은 아래와 같습니다.\n
+				1. 아카이빙하려는 주소만 입력한다.
+				2. 본인의 요청내역을 보고 싶은 경우, '기록' 을 입력한다.\n
+				감사합니다.
+			`;
+			send_msg(message.from.id, usage);
+		}
+	}
 });
 
 
-function send_msg(chat_id, msg) {
+function send_msg(reveive_id, msg) {
 	api.sendMessage({
-		chat_id: chat_id,
+		chat_id: reveive_id,
 		text: msg
 	}).then(function(msg) {
 		console.log(msg);
 	});
 }
 
+function send_msg_to_master(msg) {
+	send_msg(master_user_id, msg);
+}
+
 function createTable() {
-	console.log("create Table..");
+	console.log("initialize db.. create table if not exists..");
 	db.run("CREATE TABLE IF NOT EXISTS SENT_USER(ID INTEGER PRIMARY KEY, USER_ID INTEGER, USER_NAME TEXT, URL TEXT, SHORTEN TEXT)");
 }
 
-function insertRows(id, name, url, shorten) {
+function insert(id, name, url, shorten) {
 	console.log(`insert archiving log for USER : ${id}, URL : ${url}. Archived URL : ${shorten}...`);
 	var statement = db.prepare("INSERT INTO SENT_USER (USER_ID, USER_NAME, URL, SHORTEN) VALUES (?, ?, ?, ?)");
 	statement.run(id, name, url, shorten);
 	statement.finalize();
 }
 
-function readAllData() {
-	var log = 'dummy log...';
-	db.all("select * from SENT_USER", function(err, rows) {
-		rows.forEach(function(row) {
-			log += row.ID + " - " + row.USER_ID + " - " + row.USER_NAME + " - " + row.URL + " - " + row.SHORTEN + "\n";
-		}); 
-		console.log("inner loop\n" + log);
-		return Promise.resolve(log);
+function history(message) {
+	console.log(message);
+	var log = `${message.from.first_name} ${message.from.last_name} 님의 요청내역..\n`;
+	var user_id = message.from.id;
+	var preparedStmt = "SELECT * FROM SENT_USER WHERE USER_ID = " + user_id;
+	db.all(preparedStmt, function(err, rows) {
+		rows.forEach(function(row, index) {
+			log += index + 1 + " : " + row.URL + " - " + row.SHORTEN + "\n";
+		});
+		send_msg(user_id, log);
 	});
-	//console.log("loading data....");
-	//console.log("outer code \n" +log);
-	//console.log("code end..");
-	//return Promise.resolve(log);
 }
+
