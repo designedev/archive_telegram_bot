@@ -60,6 +60,8 @@ function send_msg(reveive_id, msg) {
 		text: msg
 	}).then(function(msg) {
 		console.log(msg);
+	}, function(error) {
+		console.log(error);
 	});
 }
 
@@ -80,15 +82,18 @@ function insert(id, name, url, shorten) {
 }
 
 function history(message) {
-	console.log(message);
 	var log = `${message.from.first_name} ${message.from.last_name} 님의 요청내역..\n`;
 	var user_id = message.from.id;
 	var preparedStmt = "SELECT * FROM SENT_USER WHERE USER_ID = " + user_id;
 	db.all(preparedStmt, function(err, rows) {
-		rows.forEach(function(row, index) {
-			log += index + 1 + " : " + row.URL + " - " + row.SHORTEN + "\n";
-		});
-		send_msg(user_id, log);
+		if( rows.length == 0) {
+			send_msg(master_user_name, log + "기록이 없습니다.");
+		}
+		else if(rows.length > 0) {
+			rows.forEach(function(row, index) {
+				log += index + 1 + " : " + row.URL + " - " + row.SHORTEN + "\n";
+			});
+			send_msg(user_id, log);
+		}
 	});
 }
-
