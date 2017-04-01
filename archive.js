@@ -15,7 +15,6 @@ var api = new telegram({
 createTable();
 
 api.on('message', function(message) {
-	console.log(message);	
 	var msg = message.text;
 	if(msg == '기록') {
 		history(message);
