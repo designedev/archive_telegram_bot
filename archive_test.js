@@ -138,14 +138,18 @@ function history(message) {
 			db.all(preparedStmt, function(err, rows) {
 				if( rows.length == 0) {
 					send_msg(message.chat.id, log + "요청 내역이 없습니다.");
+					reduce_quota();
 				}
 				else if(rows.length > 0) {
 					rows.forEach(function(row, index) {
 						log += "[" + (index + 1) + "] " + row.SHORTEN + " \n";
 					});
 					send_msg(message.chat.id, log);
+					reduce_quota();
 				}
 			});
+		}
+		else {
 			reduce_quota();
 		}
 	}
