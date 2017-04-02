@@ -2,20 +2,19 @@ var archive = require('archive.is');
 var telegram = require('telegram-bot-api');
 var urlRegex = require('url-regex');
 var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('./db/user_dev.db');
+var db = new sqlite3.Database('./db/user.db');
 
 var master_user_name = 'torrent';
 var master_user_id = 58034127;
 
 var api = new telegram({
-	token: '346329246:AAGiLncu5A1KwNO2N0AIWN13AEOWqjIRA20',
+	token: '291091522:AAE1mQYokX4-x6uH7qWGVPL_6dihU6GlJDU',
 	updates: {enabled: true}
 });
 
 createTable();
 
 api.on('message', function(message) {
-	console.log(message);	
 	var msg = message.text;
 	if(msg == '기록') {
 		history(message);
@@ -61,6 +60,8 @@ function send_msg(reveive_id, msg) {
 		text: msg
 	}).then(function(msg) {
 		console.log(msg);
+	}, function(error) {
+		console.log(error);
 	});
 }
 
@@ -81,15 +82,18 @@ function insert(id, name, url, shorten) {
 }
 
 function history(message) {
-	console.log(message);
 	var log = `${message.from.first_name} ${message.from.last_name} 님의 요청내역..\n`;
 	var user_id = message.from.id;
 	var preparedStmt = "SELECT * FROM SENT_USER WHERE USER_ID = " + user_id;
 	db.all(preparedStmt, function(err, rows) {
-		rows.forEach(function(row, index) {
-			log += index + 1 + " : " + row.URL + " - " + row.SHORTEN + "\n";
-		});
-		send_msg(user_id, log);
+		if( rows.length == 0) {
+			send_msg(master_user_name, log + "기록이 없습니다.");
+		}
+		else if(rows.length > 0) {
+			rows.forEach(function(row, index) {
+				log += index + 1 + " : " + row.URL + " - " + row.SHORTEN + "\n";
+			});
+			send_msg(user_id, log);
+		}
 	});
 }
-
