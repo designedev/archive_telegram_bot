@@ -38,14 +38,14 @@ TELEGRAM MESSAGE DATA FORMAT...
 */
 
 api.on('message', function(message) {
-	console.log("bot load : " + work_count + "/" + MAX_WORK_COUNT);
 	// console.log(message);
 	var msg = message.text;
-	if(msg == '기록') {
+	if(msg == '!!기록!!') {
 		history(message);
 	}
 	else if(urlRegex().test(msg)) {
 		if (check_quota(message)) {
+			console.log("bot working : " + work_count + "/" + MAX_WORK_COUNT);
 			archive.save(msg).then(function(result) {
 			//send message to requested user.
 			send_msg(
@@ -73,8 +73,7 @@ api.on('message', function(message) {
 		if(message.from.id == message.chat.id) {
 			var usage = `
 				아카이빙 봇의 사용법은 아래와 같습니다.\n
-				1. 아카이빙하려는 주소만 입력한다.
-				2. 본인의 요청내역을 보고 싶은 경우, '기록' 을 입력한다.
+				아카이빙하려는 주소만 입력한다. 끝.
 			`;
 			send_msg(message.from.id, usage);
 		}
